@@ -1,0 +1,22 @@
+{
+  "name": "fs-dbengine",
+  "version": "0.0.1",
+  "description": "Use fs as a dbengine.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Zulivan/fs-dbengine.git"
+  },
+  "keywords": [
+    "fs-db"
+  ],
+  "author": "Zulivan",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Zulivan/fs-dbengine/issues"
+  },
+  "homepage": "https://github.com/Zulivan/fs-dbengine#readme"
+}
