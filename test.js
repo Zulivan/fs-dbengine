@@ -1,8 +1,10 @@
-const fsdb = require('index.js');
-const path = require('path');
+const fsdb = require('./index.js');
+const Database = new fsdb('db');
 
-const Database = new fsdb(path.join(__dirname, 'db'));
-
-Database.getCollection('some1').then( (collection, err) => {
-    
+Database.getCollection('some1').then((collection) => {
+    console.log(collection)
 });
+
+setInterval(function () {
+    console.log('Prevent it from ending.');
+}, 3000)
