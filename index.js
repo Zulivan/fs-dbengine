@@ -1,72 +1,145 @@
-const fs = require('fs');
+const fs = require('fs-extra');
 const path = require('path');
 const debug = true;
 
 let Private = {
-    formatName: function (input, extension=false){
-        if(extension){
-            return input+'.json';
+    formatName: function (input, extension = false) {
+        if (extension) {
+            return input + '.json';
         };
         return input.split('.')[0];
-    }
+    },
 };
 
 const Public = class FSDB {
     /**
-     * Initialize
-     * @param {string} folder Path to the databse.
-     * @param {string} cache Name of the the cache files folder of the database.
+     * Initialize fs-dbengine.
+     * @param {string} database_name Name of the database
+     * @param {string} [options.cache] Name of the cache files folder of the database.
+     * @param {string} [options.delay] How many second should the DB saved as backup after its last backup.
+     * @param {string} [options.amount] How many backups should be stored in the backup folder
+     * @param {string} [options.root] Name of the root folder containing all databases
      */
 
-    constructor(folder, cache) {
+    constructor(database_name, options = {}) {
+        if (!database_name) return 'Set database name';
+        const self = this;
 
-        Private.Cache = cache || '__cache';
-        Private.Folder = folder;
+        Private.Root = options.root || 'fsdb';
+        Private.Cache = options.cache || 'cache';
+        Private.Delay = options.delay * 1000 || 30000;
+        Private.Amount = options.amount || 2;
+        Private.Folder = database_name;
+
         Private.DataValues = {};
 
         Private.Saves = {
-            lastsave: null
+            lastbackup: [],
+            filesrestored: {}
         };
 
-        this.validateDatase();
+        self.validateDatase();
 
+        if (Private.Delay > 0) {
+
+            setInterval(function () {
+                self.makeBackup();
+            }, Private.Delay);
+
+        };
     };
 
     debug(text) {
         if (debug) console.log(text);
     }
 
-    validateDatase() {
-        if (!fs.existsSync(path.join(__dirname, Private.Folder))) {
-            fs.mkdirSync(path.join(__dirname, Private.Folder));
-        };
-        if (!fs.existsSync(path.join(__dirname, Private.Folder, Private.Cache))) {
-            fs.mkdirSync(path.join(__dirname, Private.Folder, Private.Cache));
-        };
-        if (!fs.existsSync(path.join(__dirname, Private.Folder, Private.Cache, 'backup'))) {
-            fs.mkdirSync(path.join(__dirname, Private.Folder, Private.Cache, 'backup'));
-        };
-        if (!fs.existsSync(path.join(__dirname, Private.Folder, Private.Cache, 'saves.json'))) {
-            fs.writeFileSync(path.join(__dirname, Private.Folder, Private.Cache, 'saves.json'), Private.Saves);
-        } else {
-            try {
-                Private.Saves = JSON.parse(fs.readFileSync(path.join(__dirname, Private.Folder, Private.Cache, 'saves.json')));
-            } catch (e) {
-                this.debug('Previous saves file is corrupted.');
+    makeBackup() {
+        const self = this;
+        return new Promise((success, error) => {
+            console.log('Making backup');
+
+            const date = Date.now().toString();
+
+            const db_folder = path.join(__dirname, Private.Root, Private.Folder);
+            const saves_file = path.join(__dirname, Private.Root, Private.Cache, 'saves.json');
+            const backup_folder = path.join(__dirname, Private.Root, Private.Cache, 'backup', date);
+
+            fs.copySync(db_folder, backup_folder);
+
+            Private.Saves.lastbackup.sort((a, b) => b - a);
+
+            if (Private.Saves.lastbackup.length >= Private.Amount) {
+                self.debug(Private.Saves.lastbackup);
+                self.debug('Too many saves! Found ' + Private.Saves.lastbackup.length + '/' + Private.Amount);
+                for (let i = 0; i < Private.Saves.lastbackup.length; i++) {
+                    if (i >= Private.Amount - 2) {
+                        self.debug('Old backup found "' + Private.Saves.lastbackup[i] + '" at index: ' + i);
+                        fs.emptyDirSync(path.join(__dirname, Private.Root, Private.Cache, 'backup', Private.Saves.lastbackup[i]));
+                        fs.rmdirSync(path.join(__dirname, Private.Root, Private.Cache, 'backup', Private.Saves.lastbackup[i]));
+                        Private.Saves.lastbackup.splice(i, 1);
+                    }
+                }
             }
+
+            Private.Saves.lastbackup.push(date);
+
+            fs.writeFileSync(saves_file, JSON.stringify(Private.Saves));
+
+            success(true);
+        });
+    }
+
+    validateDatase() {
+        if (!fs.existsSync(path.join(__dirname, Private.Root))) {
+            fs.mkdirSync(path.join(__dirname, Private.Root));
         };
+        if (!fs.existsSync(path.join(__dirname, Private.Root, Private.Folder))) {
+            fs.mkdirSync(path.join(__dirname, Private.Root, Private.Folder));
+        };
+        if (!fs.existsSync(path.join(__dirname, Private.Root, Private.Cache))) {
+            fs.mkdirSync(path.join(__dirname, Private.Root, Private.Cache));
+        };
+        if (!fs.existsSync(path.join(__dirname, Private.Root, Private.Cache, 'backup'))) {
+            fs.mkdirSync(path.join(__dirname, Private.Root, Private.Cache, 'backup'));
+        };
+        if (!fs.existsSync(path.join(__dirname, Private.Root, Private.Cache, 'saves.json'))) {
+            fs.writeFileSync(path.join(__dirname, Private.Root, Private.Cache, 'saves.json'), 'Regeneration needed');
+        }
+
+        try {
+            Private.Saves = JSON.parse(fs.readFileSync(path.join(__dirname, Private.Root, Private.Cache, 'saves.json')));
+        } catch (wrong_json_file) {
+            this.debug('Previous saves file is corrupted. Trying to regenerate it..');
+            const backups = fs.readdirSync(path.join(__dirname, Private.Root, Private.Cache, 'backup'));
+            const saves_file = path.join(__dirname, Private.Root, Private.Cache, 'saves.json');
+
+            for (let i in backups) {
+                Private.Saves.lastbackup.push(backups[i]);
+            };
+
+            Private.Saves.lastbackup.sort((a, b) => b - a);
+            fs.writeFileSync(saves_file, JSON.stringify(Private.Saves));
+            this.debug(Private.Saves.lastbackup)
+            this.debug('Regeneration done, lost all file changes.')
+        }
         return true;
     }
 
+    saveTable(collection, table) {
+        if (table) {
+            fs.writeFileSync(path.join(__dirname, Private.Root, Private.Folder, collection, Private.formatName(table, true)), JSON.stringify(Private.DataValues[collection][table]));
+        }
+    }
+
     /**
-     * Set the API class of the addon
-     * @param {function} collection to call
+     * Loads and gets a collection from database
+     * @param {function} collection_name Name of the collection
      */
 
     getCollection(collection_name) {
         return new Promise((success, error) => {
 
-            const collection_path = path.join(__dirname, Private.Folder, collection_name);
+            const collection_path = path.join(__dirname, Private.Root, Private.Folder, collection_name);
 
             if (!fs.existsSync(collection_path)) {
                 fs.mkdirSync(collection_path);
@@ -78,15 +151,44 @@ const Public = class FSDB {
             for (let prop in collection_folder) {
                 let values;
                 try {
-                    values = JSON.parse(fs.readFileSync(path.join(__dirname, Private.Folder, collection_name, collection_folder[prop])));
-                } catch (e) {
-                    this.debug('Collection: '+collection_name+', Corrupted table: '+Private.formatName(collection_folder[prop]));
+                    values = JSON.parse(fs.readFileSync(path.join(__dirname, Private.Root, Private.Folder, collection_name, collection_folder[prop])));
+                } catch (wrong_json_file) {
+                    this.debug('Collection: ' + collection_name + ', Corrupted table: ' + Private.formatName(collection_folder[prop]) + ', (' + collection_folder[prop] + ')');
                 }
                 Private.DataValues[collection_name][Private.formatName(collection_folder[prop])] = values;
-            
+
             };
 
-            success(Private.DataValues[collection_name]);
+            const self = this;
+
+            const collection = {
+                name: collection_name,
+                get(table) {
+                    return Private.DataValues[this.name][table] || {};
+                },
+                set(table, value, index, index2) {
+                    if (index) {
+                        if(!Private.DataValues[this.name][table]){
+                            Private.DataValues[this.name][table] = {};
+                        }
+                        const collection = Private.DataValues[this.name][table];
+                        if(index2){
+                            if(!Private.DataValues[this.name][table][index]){
+                                Private.DataValues[this.name][table][index] = {};
+                            }
+                            collection[index][index2] = value;
+                        }else{
+                            collection[index] = value;
+                        }
+                    } else {
+                        Private.DataValues[this.name][table] = value;
+                    }
+                    self.saveTable(this.name, table);
+                    return this;
+                }
+            }
+
+            success(collection);
         });
     };
 };

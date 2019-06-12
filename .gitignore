@@ -1,2 +1,5 @@
 run.bat
+fsdb
+node_modules
+package-lock.json
 db
