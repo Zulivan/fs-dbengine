@@ -13,7 +13,7 @@ This solution is an experiment despite the fact that it is ~~theoretically stabl
 fsdb (Customizable name) 
 │
 └─── __cache (Customizable name)
-│   │   saves.json (Manages backup system)
+│   │   saves.json (Manages the backup system)
 │   │
 │   └─── backup
 │       │   1560377410 
@@ -26,18 +26,20 @@ fsdb (Customizable name)
         │   table1.json (Customizable name)
         │   table2.json (Customizable name)
         │   ...
-        (Each JSON file contains stringified values)
+        (Each JSON file has stringified json)
 ```
 
 ## Functionalities:
+- [x] Fully customizable.
+
 - [x] Save a defined amount of backups or none.
 
-- [x] Create/Access collections. (folder)
+- [x] Create/Access collections.
 
-- [x] Create/Set tables (json files)
+- [x] Create/Set tables.
 
 - [ ] Apply backups when a file is corrupted.
 
 - [ ] Get a better way to access objects values when more than 2 keys are required (current method is bad)
 
-- [ ] Delete keys if these
+- [ ] Delete keys from a table.
