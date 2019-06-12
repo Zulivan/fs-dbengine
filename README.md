@@ -21,12 +21,25 @@ fsdb (Customizable name)
 │       │   ...
 │       (A folder that contains all backups called by the time they were created)
 │   
-└─── database (Customizable name)
-    └─── Collection (Customizable name)
-        │   table1.json (Customizable name)
-        │   table2.json (Customizable name)
-        │   ...
-        (Each JSON file has stringified json)
+└─── Database1 (Customizable name)
+│    └─── Collection1 (Customizable name)
+│    │      table1.json (Customizable name)
+│    │      table2.json (Customizable name)
+│    │      ...
+│    └─── Collection2 (Customizable name)
+│        │   table1.json (Customizable name)
+│        │   table2.json (Customizable name)
+│        │   ...
+│        (Each JSON file has stringified json)
+│   
+│   
+└─── Database2 (Customizable name)
+│   └─── Collection (Customizable name)
+│   │   │   Table.json (Customizable name)
+│   │   │   ...
+│   │   ...
+│   ...
+...
 ```
 
 ## Functionalities:
