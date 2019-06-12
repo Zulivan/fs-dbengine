@@ -1,6 +1,6 @@
 {
   "name": "fs-dbengine",
-  "version": "0.8",
+  "version": "0.0.3",
   "description": "Use fs as a dbengine.",
   "main": "index.js",
   "scripts": {
