@@ -1,6 +1,6 @@
 const fs = require('fs-extra');
 const path = require('path');
-const debug = true;
+const debug = false;
 
 let Private = {
     formatName: function (input, extension = false) {
@@ -14,11 +14,11 @@ let Private = {
 const Public = class FSDB {
     /**
      * Initialize fs-dbengine.
-     * @param {string} database_name Name of the database
+     * @param {string} database_name Name of the database.
      * @param {string} [options.cache] Name of the cache files folder of the database.
-     * @param {string} [options.delay] How many second should the DB saved as backup after its last backup.
-     * @param {string} [options.amount] How many backups should be stored in the backup folder
-     * @param {string} [options.root] Name of the root folder containing all databases
+     * @param {string} [options.delay] At what interval should the DB be saved as backup (in seconds).
+     * @param {string} [options.amount] How many backups should be stored in the backup folder.
+     * @param {string} [options.root] Name of the root folder containing all databases and cache files.
      */
 
     constructor(database_name, options = {}) {
@@ -168,16 +168,16 @@ const Public = class FSDB {
                 },
                 set(table, value, index, index2) {
                     if (index) {
-                        if(!Private.DataValues[this.name][table]){
+                        if (!Private.DataValues[this.name][table]) {
                             Private.DataValues[this.name][table] = {};
                         }
                         const collection = Private.DataValues[this.name][table];
-                        if(index2){
-                            if(!Private.DataValues[this.name][table][index]){
+                        if (index2) {
+                            if (!Private.DataValues[this.name][table][index]) {
                                 Private.DataValues[this.name][table][index] = {};
                             }
                             collection[index][index2] = value;
-                        }else{
+                        } else {
                             collection[index] = value;
                         }
                     } else {
