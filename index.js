@@ -1,6 +1,6 @@
 const fs = require('fs-extra');
 const path = require('path');
-const debug = true;
+const debug = false;
 
 let Private = {
     formatName: function (input, extension = false) {
@@ -19,16 +19,18 @@ const Public = class FSDB {
      * @param {string} [options.delay] At what interval should the DB be saved as backup (in seconds).
      * @param {string} [options.amount] How many backups should be stored in the backup folder.
      * @param {string} [options.root] Name of the root folder containing all databases and cache files.
+     * @param {string} [options.dir] Sets a specific directory.
      */
 
     constructor(database_name, options = {}) {
-        if (!database_name) return 'Set database name';
+        if (!database_name) return 'Set a database name';
         const self = this;
 
         Private.Root = options.root || 'fsdb';
         Private.Cache = options.cache || 'cache';
         Private.Delay = options.delay * 1000 || 30000;
         Private.Amount = options.amount || 2;
+        Private.Dirname = options.dir || __dirname;
         Private.Folder = database_name;
 
         Private.DataValues = {};
@@ -60,9 +62,9 @@ const Public = class FSDB {
 
             const date = Date.now().toString();
 
-            const db_folder = path.join(__dirname, Private.Root, Private.Folder);
-            const saves_file = path.join(__dirname, Private.Root, Private.Cache, 'saves.json');
-            const backup_folder = path.join(__dirname, Private.Root, Private.Cache, 'backup', date);
+            const db_folder = path.join(Private.Dirname, Private.Root, Private.Folder);
+            const saves_file = path.join(Private.Dirname, Private.Root, Private.Cache, 'saves.json');
+            const backup_folder = path.join(Private.Dirname, Private.Root, Private.Cache, 'backup', date);
 
             fs.copySync(db_folder, backup_folder);
 
@@ -74,8 +76,8 @@ const Public = class FSDB {
                 for (let i = 0; i < Private.Saves.lastbackup.length; i++) {
                     if (i >= Private.Amount - 2) {
                         self.debug('Oldest backup folder found "' + Private.Saves.lastbackup[i] + '" at index: ' + i);
-                        fs.emptyDirSync(path.join(__dirname, Private.Root, Private.Cache, 'backup', Private.Saves.lastbackup[i]));
-                        fs.rmdirSync(path.join(__dirname, Private.Root, Private.Cache, 'backup', Private.Saves.lastbackup[i]));
+                        fs.emptyDirSync(path.join(Private.Dirname, Private.Root, Private.Cache, 'backup', Private.Saves.lastbackup[i]));
+                        fs.rmdirSync(path.join(Private.Dirname, Private.Root, Private.Cache, 'backup', Private.Saves.lastbackup[i]));
                         Private.Saves.lastbackup.splice(i, 1);
                     }
                 }
@@ -90,28 +92,28 @@ const Public = class FSDB {
     }
 
     validateDatase() {
-        if (!fs.existsSync(path.join(__dirname, Private.Root))) {
-            fs.mkdirSync(path.join(__dirname, Private.Root));
+        if (!fs.existsSync(path.join(Private.Dirname, Private.Root))) {
+            fs.mkdirSync(path.join(Private.Dirname, Private.Root));
         };
-        if (!fs.existsSync(path.join(__dirname, Private.Root, Private.Folder))) {
-            fs.mkdirSync(path.join(__dirname, Private.Root, Private.Folder));
+        if (!fs.existsSync(path.join(Private.Dirname, Private.Root, Private.Folder))) {
+            fs.mkdirSync(path.join(Private.Dirname, Private.Root, Private.Folder));
         };
-        if (!fs.existsSync(path.join(__dirname, Private.Root, Private.Cache))) {
-            fs.mkdirSync(path.join(__dirname, Private.Root, Private.Cache));
+        if (!fs.existsSync(path.join(Private.Dirname, Private.Root, Private.Cache))) {
+            fs.mkdirSync(path.join(Private.Dirname, Private.Root, Private.Cache));
         };
-        if (!fs.existsSync(path.join(__dirname, Private.Root, Private.Cache, 'backup'))) {
-            fs.mkdirSync(path.join(__dirname, Private.Root, Private.Cache, 'backup'));
+        if (!fs.existsSync(path.join(Private.Dirname, Private.Root, Private.Cache, 'backup'))) {
+            fs.mkdirSync(path.join(Private.Dirname, Private.Root, Private.Cache, 'backup'));
         };
-        if (!fs.existsSync(path.join(__dirname, Private.Root, Private.Cache, 'saves.json'))) {
-            fs.writeFileSync(path.join(__dirname, Private.Root, Private.Cache, 'saves.json'), 'Regeneration needed');
+        if (!fs.existsSync(path.join(Private.Dirname, Private.Root, Private.Cache, 'saves.json'))) {
+            fs.writeFileSync(path.join(Private.Dirname, Private.Root, Private.Cache, 'saves.json'), 'Regeneration needed');
         }
 
         try {
-            Private.Saves = JSON.parse(fs.readFileSync(path.join(__dirname, Private.Root, Private.Cache, 'saves.json')));
+            Private.Saves = JSON.parse(fs.readFileSync(path.join(Private.Dirname, Private.Root, Private.Cache, 'saves.json')));
         } catch (wrong_json_file) {
             this.debug('Previous saves file is corrupted. Trying to regenerate it..');
-            const backups = fs.readdirSync(path.join(__dirname, Private.Root, Private.Cache, 'backup'));
-            const saves_file = path.join(__dirname, Private.Root, Private.Cache, 'saves.json');
+            const backups = fs.readdirSync(path.join(Private.Dirname, Private.Root, Private.Cache, 'backup'));
+            const saves_file = path.join(Private.Dirname, Private.Root, Private.Cache, 'saves.json');
 
             for (let i in backups) {
                 Private.Saves.lastbackup.push(backups[i]);
@@ -127,7 +129,7 @@ const Public = class FSDB {
 
     saveTable(collection, table) {
         if (table) {
-            fs.writeFileSync(path.join(__dirname, Private.Root, Private.Folder, collection, Private.formatName(table, true)), JSON.stringify(Private.DataValues[collection][table]));
+            fs.writeFileSync(path.join(Private.Dirname, Private.Root, Private.Folder, collection, Private.formatName(table, true)), JSON.stringify(Private.DataValues[collection][table]));
         }
     }
 
@@ -140,7 +142,7 @@ const Public = class FSDB {
         const self = this;
         return new Promise((success, error) => {
 
-            const collection_path = path.join(__dirname, Private.Root, Private.Folder, collection_name);
+            const collection_path = path.join(Private.Dirname, Private.Root, Private.Folder, collection_name);
 
             if (!fs.existsSync(collection_path)) {
                 fs.mkdirSync(collection_path);
@@ -152,15 +154,15 @@ const Public = class FSDB {
             for (let prop in collection_folder) {
                 let values = '{}';
                 try {
-                    values = JSON.parse(fs.readFileSync(path.join(__dirname, Private.Root, Private.Folder, collection_name, collection_folder[prop])));
+                    values = JSON.parse(fs.readFileSync(path.join(Private.Dirname, Private.Root, Private.Folder, collection_name, collection_folder[prop])));
                 } catch (wrong_json_file) {
                     this.debug('Collection: ' + collection_name + ', Corrupted table: ' + Private.formatName(collection_folder[prop]));
                     //Getting a valid version in the backups folder
-                    const backups = fs.readdirSync(path.join(__dirname, Private.Root, Private.Cache, 'backup'));
+                    const backups = fs.readdirSync(path.join(Private.Dirname, Private.Root, Private.Cache, 'backup'));
 
                     for (let i in backups) {
                         try {
-                            values = JSON.parse(fs.readFileSync(path.join(__dirname, Private.Root, Private.Cache, 'backup', backups[i], collection_name, collection_folder[prop])));
+                            values = JSON.parse(fs.readFileSync(path.join(Private.Dirname, Private.Root, Private.Cache, 'backup', backups[i], collection_name, collection_folder[prop])));
                             this.debug('Found a valid file for the table: ' + Private.formatName(collection_folder[prop]));
                             self.saveTable(collection_name, Private.formatName(collection_folder[prop]));
                             if (!Private.Saves.filesrestored[Private.Folder]) {
