@@ -5,8 +5,6 @@ This module allows you to save data without having a real database server runnin
 
 This solution is an experiment despite the fact that it is ~~theoretically stable~~ in beta.
 
-#### I don't know what to think about it... Even the idea of someone who will ever try it and give their feedback happens to be miraculous.
-
 ## Tree:
 
 ```
@@ -26,12 +24,12 @@ fsdb (Customizable name)
 │    │      table1.json (Customizable name)
 │    │      table2.json (Customizable name)
 │    │      ...
+│    │
 │    └─── Collection2 (Customizable name)
 │        │   table1.json (Customizable name)
 │        │   table2.json (Customizable name)
 │        │   ...
 │        (Each JSON file has stringified json)
-│   
 │   
 └─── Database2 (Customizable name)
 │   └─── Collection (Customizable name)
@@ -51,8 +49,10 @@ fsdb (Customizable name)
 
 - [x] Create/Set tables.
 
-- [ ] Apply backups when a file is corrupted.
+- [x] Access nested objects' values [UP TO 6 KEYS] (looking for a better method though it's pointless since you can use tables)
 
-- [ ] Get a better way to access objects values when more than 2 keys are required (current method is bad)
+- [x] Delete keys from a table (nested objects: UP TO 6 KEYS).
 
-- [ ] Delete keys from a table.
+- [X] Use backups to fix a corrupted file.
+
+#### I don't know what to think about it... Even the idea of someone who will ever try it and give their feedback happens to be miraculous.

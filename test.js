@@ -12,6 +12,10 @@ const fsdb = require('./index.js');
 const Database = new fsdb(dbName, Options);
 
 Database.getCollection(collectionName).then((collection) => {
+    // CollectionLoaded(collection);
+});
+
+function CollectionLoaded(collection) {
 
     const data = collection.get(tableName); // This value is fixed, it cannot change even if you modify collection's values
 
@@ -21,27 +25,38 @@ Database.getCollection(collectionName).then((collection) => {
         first: 'item',
         number: 198632,
         bool: true,
-        attached: {
-            value: null
-        }
+        is_it_a_test: null
     };
-    collection.set(tableName, object);
 
-    console.log(collection.get(tableName));
+    collection.scope(tableName).set(object); // Setting table data.
+
+    console.log(collection.get()); // Getting new values
 
     const sub_object = {
-        second: 'object',
-        something: 'else',
-        2: 'say'
+        this: {
+            is: {
+                a: {
+                    test: true
+                }
+            }
+        }
     }
-    //             Table    , Value , Index
-    collection.set(tableName, false, 'bool').set(tableName, 1337, 'number');
-    collection.set(tableName, sub_object, 'unattached_value').set(tableName, sub_object, 'attached', 'value');
 
-    console.log(collection.get(tableName).unattached_value);
+    //             Value , Index, Table
+    collection.set(false, 'bool', tableName).set(1337, 'number');
+    collection.set(sub_object, 'is_it_a_test')
+    collection.set('probably', ['is_it_a_test', 'this', 'is', 'a', 'test']);
 
-});
+    console.log(collection.get().is_it_a_test.this.is.a);
 
+    collection.delete('is_it_a_test');
+
+    console.log(collection.get());
+
+    // collection.delete();
+
+    console.log(collection.get());
+};
 setInterval(function () {
     console.log('Prevent it from ending.');
 }, 3600 * 1000)

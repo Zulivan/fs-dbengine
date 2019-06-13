@@ -1,6 +1,6 @@
 const fs = require('fs-extra');
 const path = require('path');
-const debug = false;
+const debug = true;
 
 let Private = {
     formatName: function (input, extension = false) {
@@ -56,7 +56,7 @@ const Public = class FSDB {
     makeBackup() {
         const self = this;
         return new Promise((success, error) => {
-            console.log('Making backup');
+            self.debug('Making backup');
 
             const date = Date.now().toString();
 
@@ -73,7 +73,7 @@ const Public = class FSDB {
                 self.debug('Too many saves! Found ' + Private.Saves.lastbackup.length + '/' + Private.Amount);
                 for (let i = 0; i < Private.Saves.lastbackup.length; i++) {
                     if (i >= Private.Amount - 2) {
-                        self.debug('Old backup found "' + Private.Saves.lastbackup[i] + '" at index: ' + i);
+                        self.debug('Oldest backup folder found "' + Private.Saves.lastbackup[i] + '" at index: ' + i);
                         fs.emptyDirSync(path.join(__dirname, Private.Root, Private.Cache, 'backup', Private.Saves.lastbackup[i]));
                         fs.rmdirSync(path.join(__dirname, Private.Root, Private.Cache, 'backup', Private.Saves.lastbackup[i]));
                         Private.Saves.lastbackup.splice(i, 1);
@@ -137,6 +137,7 @@ const Public = class FSDB {
      */
 
     getCollection(collection_name) {
+        const self = this;
         return new Promise((success, error) => {
 
             const collection_path = path.join(__dirname, Private.Root, Private.Folder, collection_name);
@@ -149,39 +150,132 @@ const Public = class FSDB {
             Private.DataValues[collection_name] = {};
 
             for (let prop in collection_folder) {
-                let values;
+                let values = '{}';
                 try {
                     values = JSON.parse(fs.readFileSync(path.join(__dirname, Private.Root, Private.Folder, collection_name, collection_folder[prop])));
                 } catch (wrong_json_file) {
-                    this.debug('Collection: ' + collection_name + ', Corrupted table: ' + Private.formatName(collection_folder[prop]) + ', (' + collection_folder[prop] + ')');
-                }
+                    this.debug('Collection: ' + collection_name + ', Corrupted table: ' + Private.formatName(collection_folder[prop]));
+                    //Getting a valid version in the backups folder
+                    const backups = fs.readdirSync(path.join(__dirname, Private.Root, Private.Cache, 'backup'));
+
+                    for (let i in backups) {
+                        try {
+                            values = JSON.parse(fs.readFileSync(path.join(__dirname, Private.Root, Private.Cache, 'backup', backups[i], collection_name, collection_folder[prop])));
+                            this.debug('Found a valid file for the table: ' + Private.formatName(collection_folder[prop]));
+                            self.saveTable(collection_name, Private.formatName(collection_folder[prop]));
+                            if (!Private.Saves.filesrestored[Private.Folder]) {
+                                Private.Saves.filesrestored[Private.Folder] = {};
+                            }
+                            if (!Private.Saves.filesrestored[Private.Folder][collection_name]) {
+                                Private.Saves.filesrestored[Private.Folder][collection_name] = [];
+                            }
+                            const save = {
+                                backup: backups[i],
+                                table: Private.formatName(collection_folder[prop]),
+                                time: Date.now().toString()
+                            }
+                            Private.Saves.filesrestored[Private.Folder][collection_name].push(save);
+                            break;
+                        } catch (wrong_json_file2) {
+                            this.debug('Backup #' + backups[i] + ' has a corrupted version of: ' + Private.formatName(collection_folder[prop]) + ', skipping...');
+                        };
+                    };
+                };
                 Private.DataValues[collection_name][Private.formatName(collection_folder[prop])] = values;
-
+                self.saveTable(collection_name, Private.formatName(collection_folder[prop]));
             };
-
-            const self = this;
 
             const collection = {
                 name: collection_name,
-                get(table) {
+                scoped_table: null,
+                scope(tbl) {
+                    if (!tbl) return;
+                    this.scoped_table = tbl;
+                    return this;
+                },
+                get(tbl) {
+                    this.scope(tbl);
+                    const table = tbl || this.scoped_table;
+                    if (!table) {
+                        return self.debug('No table set.');
+                    }
                     return Private.DataValues[this.name][table] || {};
                 },
-                set(table, value, index, index2) {
-                    if (index) {
+                set(value, index, tbl) {
+                    this.scope(tbl);
+                    const table = tbl || this.scoped_table;
+                    if (!table) return self.debug('No table set.');
+
+                    if (Array.isArray(index)) {
                         if (!Private.DataValues[this.name][table]) {
                             Private.DataValues[this.name][table] = {};
                         }
-                        const collection = Private.DataValues[this.name][table];
-                        if (index2) {
-                            if (!Private.DataValues[this.name][table][index]) {
-                                Private.DataValues[this.name][table][index] = {};
-                            }
-                            collection[index][index2] = value;
-                        } else {
-                            collection[index] = value;
+
+                        index.push('fix');
+                        const indexes = index.length - 1;
+
+                        // Looking for a better solution
+                        if (indexes == 2) {
+                            Private.DataValues[this.name][table][index[0]][index[1]] = value;
                         }
+                        if (indexes == 3) {
+                            Private.DataValues[this.name][table][index[0]][index[1]][index[2]] = value;
+                        }
+                        if (indexes == 4) {
+                            Private.DataValues[this.name][table][index[0]][index[1]][index[2]][index[3]] = value;
+                        }
+                        if (indexes == 5) {
+                            Private.DataValues[this.name][table][index[0]][index[1]][index[2]][index[3]][index[4]] = value;
+                        }
+                        if (indexes == 6) {
+                            Private.DataValues[this.name][table][index[0]][index[1]][index[2]][index[3]][index[4]][index[5]] = value;
+                        }
+
+                    } else if (index) {
+                        if (!Private.DataValues[this.name][table]) {
+                            Private.DataValues[this.name][table] = {};
+                        }
+                        Private.DataValues[this.name][table][index] = value;
                     } else {
                         Private.DataValues[this.name][table] = value;
+                    }
+                    self.saveTable(this.name, table);
+                    return this;
+                },
+                delete(index, tbl) {
+                    this.scope(tbl);
+                    const table = tbl || this.scoped_table;
+                    if (!table) return self.debug('No table set.');
+
+                    if (Array.isArray(index)) {
+                        if (!Private.DataValues[this.name][table]) {
+                            Private.DataValues[this.name][table] = {};
+                        }
+
+                        index.push('fix');
+                        const indexes = index.length - 1;
+
+                        // Looking for a better solution
+                        if (indexes == 2) {
+                            delete Private.DataValues[this.name][table][index[0]][index[1]];
+                        }
+                        if (indexes == 3) {
+                            delete Private.DataValues[this.name][table][index[0]][index[1]][index[2]];
+                        }
+                        if (indexes == 4) {
+                            delete Private.DataValues[this.name][table][index[0]][index[1]][index[2]][index[3]];
+                        }
+                        if (indexes == 5) {
+                            delete Private.DataValues[this.name][table][index[0]][index[1]][index[2]][index[3]][index[4]];
+                        }
+                        if (indexes == 6) {
+                            delete Private.DataValues[this.name][table][index[0]][index[1]][index[2]][index[3]][index[4]][index[5]];
+                        }
+
+                    } else if (index) {
+                        delete Private.DataValues[this.name][table][index];
+                    } else {
+                        Private.DataValues[this.name][table] = {};
                     }
                     self.saveTable(this.name, table);
                     return this;
