@@ -1,7 +1,7 @@
 # FS-DBENGINE
 Because __fsdb__ was already used...
 
-This module allows you to save data without having a real database server running outside your code __quite__ easily.
+This module allows you to save data without having an actual database server running outside your code __quite__ easily.
 
 This solution is an experiment despite the fact that it is ~~theoretically stable~~ in beta.
 
@@ -40,7 +40,7 @@ fsdb (Customizable name)
 ...
 ```
 
-## Functionalities:
+## Features:
 - [x] Fully customizable.
 
 - [x] Save a defined amount of backups or none.
@@ -49,7 +49,7 @@ fsdb (Customizable name)
 
 - [x] Create/Set tables.
 
-- [x] Access nested objects' values [UP TO 6 KEYS] (looking for a better method though it's pointless since you can use tables)
+- [x] Access nested objects' values [UP TO 6 KEYS] (looking for a better method even though it's pointless since you can use tables)
 
 - [x] Delete keys from a table (nested objects: UP TO 6 KEYS).
 
