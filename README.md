@@ -1,8 +1,6 @@
 # FS-DBENGINE
 Because __fsdb__ was already used...
-
 This module allows you to save data without having an actual database server running outside your code __quite__ easily.
-
 This solution is an experiment despite the fact that it is ~~theoretically stable~~ in beta.
 
 ## Tree:
@@ -54,5 +52,7 @@ fsdb (Customizable name)
 - [x] Delete keys from a table (nested objects: UP TO 6 KEYS).
 
 - [X] Use backups to fix a corrupted file.
+
+<a href="https://nodei.co/npm/fs-dbengine/"><img src="https://nodei.co/npm/fs-dbengine.png"></a>
 
 #### I don't know what to think about it... Even the idea of someone who will ever try it and give their feedback happens to be miraculous.
