@@ -1,6 +1,6 @@
 # FS-DBENGINE
-Because __fsdb__ was already used...
-This module allows you to save data without having an actual database server running outside your code __quite__ easily.
+Because __fsdb__ was already taken.
+This module allows you to save data without having an actual database server.
 This solution is an experiment despite the fact that it is ~~theoretically stable~~ in beta.
 
 ## Tree:
@@ -47,9 +47,9 @@ fsdb (Customizable name)
 
 - [x] Create/Set tables.
 
-- [x] Access nested objects' values [UP TO 6 KEYS] (looking for a better method even though it's pointless since you can use tables)
+- [x] Access and set nested data structures (see test.js).
 
-- [x] Delete keys from a table (nested objects: UP TO 6 KEYS).
+- [x] Delete keys from a table.
 
 - [X] Use backups to fix a corrupted file.
 
