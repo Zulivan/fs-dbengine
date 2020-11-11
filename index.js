@@ -19,7 +19,7 @@ const Public = class FSDB {
      * @param {string} [options.delay] At what interval should the DB be saved as backup (in seconds).
      * @param {string} [options.amount] How many backups should be stored in the backup folder.
      * @param {string} [options.root] Name of the root folder containing all databases and cache files.
-     * @param {string} [options.dir] Sets a specific directory.
+     * @param {string} [options.directory] Sets a specific directory.
      */
 
     constructor(database_name, options = {}) {
@@ -30,7 +30,7 @@ const Public = class FSDB {
         Private.Cache = options.cache || 'cache';
         Private.Delay = options.delay * 1000 || 30000;
         Private.Amount = options.amount || 2;
-        Private.Dirname = options.dir || __dirname;
+        Private.Dirname = options.directory || __dirname;
         Private.Folder = database_name;
 
         Private.DataValues = {};
@@ -198,9 +198,7 @@ const Public = class FSDB {
                 get(tbl) {
                     this.scope(tbl);
                     const table = tbl || this.scoped_table;
-                    if (!table) {
-                        return self.debug('No table set.');
-                    }
+                    if (!table) return self.debug('No table set.');
                     return Private.DataValues[this.name][table] || {};
                 },
                 set(value, index, tbl) {
@@ -213,26 +211,15 @@ const Public = class FSDB {
                             Private.DataValues[this.name][table] = {};
                         }
 
-                        index.push('fix');
-                        const indexes = index.length - 1;
-
-                        // Looking for a better solution
-                        if (indexes == 2) {
-                            Private.DataValues[this.name][table][index[0]][index[1]] = value;
-                        }
-                        if (indexes == 3) {
-                            Private.DataValues[this.name][table][index[0]][index[1]][index[2]] = value;
-                        }
-                        if (indexes == 4) {
-                            Private.DataValues[this.name][table][index[0]][index[1]][index[2]][index[3]] = value;
-                        }
-                        if (indexes == 5) {
-                            Private.DataValues[this.name][table][index[0]][index[1]][index[2]][index[3]][index[4]] = value;
-                        }
-                        if (indexes == 6) {
-                            Private.DataValues[this.name][table][index[0]][index[1]][index[2]][index[3]][index[4]][index[5]] = value;
+                        function setValue(obj, keys, value){
+                            if (keys.length > 1){
+                                setValue(obj[keys.shift()], keys, value);
+                            }else{
+                                obj[keys[0]] = value;
+                            }
                         }
 
+                        setValue(Private.DataValues[this.name][table], index, value);
                     } else if (index) {
                         if (!Private.DataValues[this.name][table]) {
                             Private.DataValues[this.name][table] = {};
@@ -254,26 +241,15 @@ const Public = class FSDB {
                             Private.DataValues[this.name][table] = {};
                         }
 
-                        index.push('fix');
-                        const indexes = index.length - 1;
-
-                        // Looking for a better solution
-                        if (indexes == 2) {
-                            delete Private.DataValues[this.name][table][index[0]][index[1]];
+                        function delValue(obj, keys, value){
+                            if (keys.length > 1){
+                                delValue(obj[keys.shift()], keys, value);
+                            }else{
+                                delete obj[keys[0]];
+                            }
                         }
-                        if (indexes == 3) {
-                            delete Private.DataValues[this.name][table][index[0]][index[1]][index[2]];
-                        }
-                        if (indexes == 4) {
-                            delete Private.DataValues[this.name][table][index[0]][index[1]][index[2]][index[3]];
-                        }
-                        if (indexes == 5) {
-                            delete Private.DataValues[this.name][table][index[0]][index[1]][index[2]][index[3]][index[4]];
-                        }
-                        if (indexes == 6) {
-                            delete Private.DataValues[this.name][table][index[0]][index[1]][index[2]][index[3]][index[4]][index[5]];
-                        }
-
+                        
+                        delValue(Private.DataValues[this.name][table], index, value);
                     } else if (index) {
                         delete Private.DataValues[this.name][table][index];
                     } else {
