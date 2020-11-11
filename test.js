@@ -43,7 +43,7 @@ function Users(collection) {
         });
     }
 
-    console.log(collection.get().UID); // Gets the lastest scope (the latest user).
+    console.log(collection.get().UID); // Gets the last table used (the latest user).
 
     setInterval(() => {
         let userId = Math.floor(Math.random() * Math.floor(101));
