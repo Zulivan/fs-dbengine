@@ -20,6 +20,6 @@
   },
   "homepage": "https://github.com/Zulivan/fs-dbengine#readme",
   "dependencies": {
-    "fs-extra": "^8.0.1"
+    "fs-extra": "^11.2.0"
   }
 }
