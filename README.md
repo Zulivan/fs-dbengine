@@ -1,7 +1,7 @@
 # FS-DBENGINE
 Because __fsdb__ was already taken.
 This module allows you to save data without having an actual database server.
-This solution is an experiment despite the fact that it is ~~theoretically stable~~ in beta.
+This solution is an experiment despite the fact that it is ~~theoretically~~ stable in beta.
 
 ## Tree:
 
